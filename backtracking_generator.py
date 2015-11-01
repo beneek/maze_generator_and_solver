@@ -8,7 +8,7 @@ from cell import Cell
 # Aglorytm generowania labiryntu
 # Autorzy: Jarosław Żok Rafał Brzychcy grzegorzwilczek
 # Zmodyfikował: Bartłomiej Pokrzywiński na potrzeby pracy inżynierskiej
-# Implementacji objęta jest licencją Creative Commons BY-SA 3.0 Polska.
+# Implementacja objęta jest licencją Creative Commons BY-SA 3.0 Polska.
 # ----------------------------------------------------------------------
 
 # Kolory RGB
@@ -19,9 +19,11 @@ BLUE = (160, 160, 255)
 GREEN = (160, 255, 160)
 GRAY = (230, 230, 230)
 ENDPOINTPURPLE = (139, 0, 139)
+YELLOW = (255,255,0)
 
-MAZE_WIDTH = 20
-MAZE_HEIGHT = 10
+
+MAZE_WIDTH = 4
+MAZE_HEIGHT = 5
 
 WINDOW_WIDTH = 800
 WINDOW_HEIGHT = 600
@@ -80,7 +82,7 @@ class MazeRunnerBase:
     def getLocation(self):
         return self.location
 
-    def change_location(self, moveHeight, moveWidth):
+    def change_location(self, moveHeight, moveWidth,color = WHITE):
         if self.x + moveWidth < 0:
             self.x = 0
         elif self.y + moveHeight < 0:
@@ -90,7 +92,7 @@ class MazeRunnerBase:
         elif self.y + moveHeight > MAZE_HEIGHT - 1:
             self.y = MAZE_HEIGHT - 1
         else:
-            self.draw_cell([self.x,self.y], WHITE)
+            self.draw_cell([self.x,self.y], color)
             self.x += moveWidth
             self.y += moveHeight
             self.draw_cell([self.x,self.y], RED)
@@ -121,7 +123,16 @@ class AutomaticMazeRunner(MazeRunnerBase):
             if(whereToGo == 3 and not currentCell.hasEastWall()):
                 self.moveRight()
 
+    def change_location(self, moveHeight, moveWidth,color = YELLOW):
+        super().change_location(moveHeight,moveWidth,color)
 
+    def moveTick(self,maze):
+        if self.x != maze.get_end_position()[0] or self.y != maze.get_end_position()[1]:
+            currentCell = maze.get_specific_cell(self.x,self.y)
+            self.moveAcrossTheMazeInRandomDirection(currentCell)
+        else:
+            print("Random maze runner had met the end")
+            pygame.time.set_timer(TIMER_TICK_MOVE_AUTOMAZERUNNER, 0)  # Zatrzymujemy timer
 
 
 
@@ -373,6 +384,8 @@ if __name__ == "__main__":
                 sys.exit(0)
             elif event.type == TIMER_TICK_GENRATE_MAZE:
                 maze.tick()
+            elif event.type == TIMER_TICK_MOVE_AUTOMAZERUNNER:
+                automaticMazeRunner.moveTick(maze)
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_w:
                     if not maze.get_specific_cell(mazeRunner.x, mazeRunner.y).hasNorthWall():
@@ -407,7 +420,5 @@ if __name__ == "__main__":
                     print("You won!")
 
                 if event.key == pygame.K_1:
-                    while (automaticMazeRunner.x != maze.get_end_position()[0] or
-                                   automaticMazeRunner.y != maze.get_end_position()[1]):
-                        currentCell = maze.get_specific_cell(automaticMazeRunner.x,automaticMazeRunner.y)
-                        automaticMazeRunner.moveAcrossTheMazeInRandomDirection(currentCell)
+                    pygame.time.set_timer(TIMER_TICK_MOVE_AUTOMAZERUNNER, DELAY)
+

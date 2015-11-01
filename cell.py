@@ -5,6 +5,9 @@ class Cell(object):
         # Walls - [NORTH,SOUTH,WEST,EAST] 1 means wall is there 0  means wall is not there
         self.walls = walls
 
+    def markVisited(self):
+        self.visited = True
+
     def hasNorthWall(self):
         return self.walls[0] == 1
 
