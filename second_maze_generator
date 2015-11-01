@@ -1,0 +1,125 @@
+import pygame, random
+from pygame.locals import *
+import time
+
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
+GRAY = (230, 230, 230)
+
+SCREEN_WIDTH = 640 * 2
+SCREEN_HEIGHT = 480 * 2
+
+MOUSE_NOT_VISIBLE = 0
+EXIT_SUCESS = 0
+
+grid = [[0, 0, 0, 0, 0, 1],
+        [1, 1, 0, 0, 0, 1],
+        [0, 0, 0, 1, 0, 0],
+        [0, 1, 1, 0, 0, 1],
+        [0, 1, 0, 0, 1, 0],
+        [0, 1, 0, 0, 0, 2]]
+
+
+class Maze(object):
+    def __init__(self, mazeLayer):
+        self.mazeArrray = []
+        self.state = 'idle'
+        self.mLayer = mazeLayer
+        self.mLayer.fill((0, 0, 0, 0))
+
+        numberOfCellsHorizontally = int(SCREEN_HEIGHT / 8)
+        numberOfCellsVertically = int(SCREEN_WIDTH / 8)
+
+        for y in range(numberOfCellsHorizontally):
+            pygame.draw.line(self.mLayer, BLACK, (0, y * 8), (SCREEN_WIDTH, y * 8))
+            for x in range(numberOfCellsVertically):
+                self.mazeArrray.append(0x0000)
+                if y == 0:
+                    pygame.draw.line(self.mLayer, BLACK, (x * 8, 0), (x * 8, SCREEN_HEIGHT))
+        self.totalCells = numberOfCellsVertically * numberOfCellsHorizontally
+        self.currentCell = random.randint(0, self.totalCells - 1)
+        self.visitedCells = 1
+        self.cellStack = []
+        self.compass = [(-1, 0), (0, 1), (1, 0), (0, -1)]
+
+    def update(self):
+        if self.state == 'create':
+            if self.visitedCells >= self.totalCells:
+                self.currentCell = 0
+                self.cellStack = []
+                self.state = 'solve'
+                return
+            moved = False
+            while (moved == False):
+                x = self.currentCell % 80
+                y = self.currentCell / 80
+                neighbors = []
+                for i in range(4):
+                    nx = x + self.compass[i][0]
+                    ny = y + self.compass[i][1]
+                    if ((nx >= 0) and (ny >= 0) and (nx < 80) and (ny < 60)):
+                        if (self.mazeArray[(ny * 80 + nx)] & 0x000F) == 0:
+                            nidx = ny * 80 + nx
+                            neighbors.append((nidx, 1 << i))
+                if len(neighbors) > 0:
+                    idx = random.randint(0, len(neighbors) - 1)
+                    nidx, direction = neighbors[idx]
+                    dx = x * 8
+                    dy = y * 8
+                    if direction & 1:
+                        self.mazeArray[nidx] |= (4)
+                        pygame.draw.line(self.mLayer, (0, 0, 0, 0), (dx, dy + 1), (dx, dy + 7))
+                    elif direction & 2:
+                        self.mazeArray[nidx] |= (8)
+                        pygame.draw.line(self.mLayer, (0, 0, 0, 0), (dx + 1, dy + 8), (dx + 7, dy + 8))
+                    elif direction & 4:
+                        self.mazeArray[nidx] |= (1)
+                        pygame.draw.line(self.mLayer, (0, 0, 0, 0), (dx + 8, dy + 1), (dx + 8, dy + 7))
+                    elif direction & 8:
+                        self.mazeArray[nidx] |= (2)
+                        pygame.draw.line(self.mLayer, (0, 0, 0, 0), (dx + 1, dy), (dx + 7, dy))
+                    self.cellStack.append(self.currentCell)
+                    self.currentCell = nidx
+                    self.visitedCells += 1
+                    moved = True
+                    print("DUPA")
+                else:
+                    self.currentCell = self.cellStack.pop()
+
+    def draw(self, window):
+        window.blit(self.mLayer, (0, 0))
+
+
+if __name__ == "__main__":
+    pygame.init()
+    window = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    pygame.mouse.set_visible(MOUSE_NOT_VISIBLE)
+    pygame.display.set_caption('MAZE GENERATOR')
+
+    mazeLayer = pygame.Surface(window.get_size())
+    mazeLayer = mazeLayer.convert_alpha()  # give it some alpha values
+    mazeLayer.fill((0, 0, 0, 0))
+
+    maze = Maze(mazeLayer)
+
+    backgroundScreen = pygame.Surface(window.get_size())
+    backgroundScreen = backgroundScreen.convert()
+    backgroundScreen.fill(GRAY)
+    window.blit(backgroundScreen, (0, 0))
+    pygame.display.flip()
+    clock = pygame.time.Clock()
+
+    while True:
+        clock.tick(60)
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                exit(EXIT_SUCESS)
+            elif event.type == KEYUP:
+                if event.key == K_ESCAPE:
+                    exit(EXIT_SUCESS)
+        maze.update()
+        window.blit(backgroundScreen, (0, 0))
+        maze.draw(window)
+        maze.state='create'
+        pygame.display.flip()
