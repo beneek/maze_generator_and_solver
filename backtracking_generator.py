@@ -54,12 +54,14 @@ NBR_DOWN = 3
 
 
 class MazeRunnerBase:
-    def __init__(self, x,y):
+    def __init__(self, x,y,mazeWidth = MAZE_WIDTH,mazeHeight = MAZE_HEIGHT):
         self.x = x
         self.y = y
+        self.mazeWidth = mazeWidth
+        self.mazeHeight = mazeHeight
         self.window = pygame.display.set_mode((WINDOW_WIDTH + LINE_WIDTH, WINDOW_HEIGHT + LINE_WIDTH))
-        self.brickwidth = (WINDOW_WIDTH + (WINDOW_WIDTH % MAZE_WIDTH)) / MAZE_WIDTH
-        self.brickheight = (WINDOW_HEIGHT + (WINDOW_HEIGHT % MAZE_HEIGHT)) / MAZE_HEIGHT
+        self.brickwidth = (WINDOW_WIDTH + (WINDOW_WIDTH % self.mazeWidth)) / self.mazeWidth
+        self.brickheight = (WINDOW_HEIGHT + (WINDOW_HEIGHT % self.mazeHeight)) / self.mazeHeight
 
     def moveDown(self):
         self.change_location(1, 0)
@@ -87,10 +89,10 @@ class MazeRunnerBase:
             self.x = 0
         elif self.y + moveHeight < 0:
             self.y = 0
-        elif self.x + moveWidth > MAZE_WIDTH - 1:
-            self.x = MAZE_WIDTH - 1
-        elif self.y + moveHeight > MAZE_HEIGHT - 1:
-            self.y = MAZE_HEIGHT - 1
+        elif self.x + moveWidth > self.mazeWidth - 1:
+            self.x = self.mazeWidth - 1
+        elif self.y + moveHeight > self.mazeHeight - 1:
+            self.y = self.mazeHeight - 1
         else:
             self.draw_cell([self.x,self.y], color)
             self.x += moveWidth
@@ -100,8 +102,8 @@ class MazeRunnerBase:
 
 
 class AutomaticMazeRunner(MazeRunnerBase):
-    def __init__(self, x,y):
-        super().__init__(x,y)
+    def __init__(self, x,y,mazeWidth = MAZE_WIDTH,mazeHeight = MAZE_HEIGHT):
+        super().__init__(x,y,mazeWidth,mazeHeight)
         self.visited = []
 
     def draw_cell(self, cell, color=BLACK):
@@ -147,17 +149,18 @@ class Maze(object):
 	Klasa implementujÄca labirynt. Przechowuje stan komĂłrek labiryntu i realizuje algorytm Backtracking
 	'''
 
-    def __init__(self, width, height):
+    def __init__(self, width, height,delay = DRAW_SLEEP):
         random.seed()
 
         self.i = 0
         self.stack = []
         self.unvisited = []
         self.visited = []
-
+        self.isBuilt = False
         # Ograniczenie podanej wielkoĹci labiryntu do MAX_WIDTH i MAX_HEIGHT
         self.width = width
         self.height = height
+        self.delay = delay
 
         # Inicjalizacja silnika
         pygame.init()
@@ -178,14 +181,11 @@ class Maze(object):
         self.start = (random.randint(0, self.width - 1), random.randint(0, self.height - 1))
         self.end = (random.randint(0, self.width - 1), random.randint(0, self.height - 1))
 
-        self.cells = [[Cell(y, x, [1, 1, 1, 1]) for x in range(MAZE_WIDTH)] for y in range(MAZE_HEIGHT)]
-
-        for i in self.cells:
-            print(i)
+        self.cells = [[Cell(y, x, [1, 1, 1, 1]) for x in range(self.width)] for y in range(self.height)]
 
         # Rysujemy linie poziome
         for y in range(self.height):
-            time.sleep(DRAW_SLEEP)
+            time.sleep(self.delay)
             pygame.draw.line(self.window, BLACK, (0, y * self.brickheight), (WINDOW_WIDTH, y * self.brickheight),
                              LINE_WIDTH)
 
@@ -196,7 +196,7 @@ class Maze(object):
 
         # Rysujemy linie pionowe
         for x in range(self.width):
-            time.sleep(DRAW_SLEEP)
+            time.sleep(self.delay)
             pygame.draw.line(self.window, BLACK, (x * self.brickwidth, 0), (x * self.brickwidth, WINDOW_HEIGHT),
                              LINE_WIDTH)
             pygame.display.update()
@@ -219,7 +219,7 @@ class Maze(object):
         pygame.display.update()
 
         # Ustawienie timera na 2ms
-        pygame.time.set_timer(TIMER_TICK_GENRATE_MAZE, DELAY)
+        pygame.time.set_timer(TIMER_TICK_GENRATE_MAZE, int(delay*1000))
 
     def __del__(self):
         '''
@@ -362,6 +362,7 @@ class Maze(object):
             pygame.display.update()  # Odrysowujemy zawartoĹÄ okna
         else:
             print("Zrobione!")  # Stos jest juĹź pusty, koniec algorytmu
+            self.isBuilt=True
             self.draw_cell(self.end, ENDPOINTPURPLE)
             pygame.display.update()
             pygame.time.set_timer(TIMER_TICK_GENRATE_MAZE, 0)  # Zatrzymujemy timer
